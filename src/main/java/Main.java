@@ -26,7 +26,19 @@ public class Main {
                     tracker.addTransaction();
                     break;
                 case 2:
-                    tracker.viewTransactions();
+                    System.out.println("1.View all Transactions");
+                    System.out.println("2.View transactions in a custom date range");
+                    System.out.print("Enter you choice: ");
+                    String viewChoice = sc.nextLine();
+                    LocalDate viewTransactionsStartDate = null;
+                    LocalDate viewTransactionsEndDate = null;
+                    if(viewChoice.equals("2")){
+                        System.out.print("Enter start date(yyyy-MM-dd): ");
+                        viewTransactionsStartDate = LocalDate.parse(sc.next(), dateTimeFormatter);
+                        System.out.print("Enter end date(yyyy-MM-dd): ");
+                        viewTransactionsEndDate = LocalDate.parse(sc.next(), dateTimeFormatter);
+                    }
+                    tracker.viewTransactions(viewTransactionsStartDate,viewTransactionsEndDate);
                     break;
                 case 3:
                     System.out.println("1. Generate an all time summary");
@@ -44,7 +56,7 @@ public class Main {
                         String eDate = sc.nextLine();
                         endDate = LocalDate.parse(eDate,dateTimeFormatter);
                     }
-                    System.out.print("Filter by categoty? (y/n): ");
+                    System.out.print("Filter by category? (y/n): ");
                     String categoryFilter = sc.nextLine().toLowerCase();
                     if(categoryFilter.equals("y")){
                         System.out.println("Enter category (GROCERIES,RENT,SALARY,ENTERTAINMENT,UTILITIES,TRANSPORTATION,OTHER): ");
@@ -60,7 +72,7 @@ public class Main {
                     tracker.generateSummary(startDate,endDate,category);
                     break;
                 case 4:
-                    tracker.claculateBalance();
+                    tracker.calculateBalance();
                     break;
                 case 5:
                     tracker.generateCategoryReports();

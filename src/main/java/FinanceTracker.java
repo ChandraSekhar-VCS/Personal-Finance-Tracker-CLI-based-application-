@@ -69,20 +69,24 @@ public class FinanceTracker {
         }
     }
 
-    public void viewTransactions(){
+    public void viewTransactions(LocalDate startDate, LocalDate endDate){
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         System.out.printf("%-12s %-10s %-15s %-30s %-10s%n", "Date", "Amount", "Category", "Description", "Type");
         System.out.println("___________________________________________________________________________________");
-        for(Transaction transaction : transactions){
-            System.out.printf(
-                    "%-12s %-10.2f %-15s %-30s %-10s%n",
-                    transaction.date().format(dateTimeFormatter),
-                    transaction.amount(),
-                    transaction.category().name(),
-                    transaction.description(),
-                    transaction.type().name()
-            );
-        }
+
+        transactions.stream()
+                .filter(transaction -> startDate == null || !transaction.date().isBefore(startDate))
+                .filter(transaction -> endDate == null || !transaction.date().isAfter(endDate))
+                .forEach(transaction -> {
+                    System.out.printf(
+                            "%-12s %-10.2f %-15s %-30s %-10s%n",
+                            transaction.date().format(dateTimeFormatter),
+                            transaction.amount(),
+                            transaction.category().name(),
+                            transaction.description(),
+                            transaction.type().name()
+                    );
+                });
     }
 
     public void generateSummary(LocalDate startDate, LocalDate endDate,TransactionCategory category){
@@ -148,7 +152,6 @@ public class FinanceTracker {
                     }
                 } else {
                     System.out.println("Invalid CSV format: " + line);
-                    continue;
                 }
             }
         } catch (IOException e) {
@@ -156,7 +159,7 @@ public class FinanceTracker {
         }
     }
 
-    public void claculateBalance() {
+    public void calculateBalance() {
         double totalIncome = transactions.stream()
                 .filter(transaction -> transaction.type() == TransactionType.INCOME)
                 .mapToDouble(Transaction::amount)
