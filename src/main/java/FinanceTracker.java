@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -7,16 +8,19 @@ import java.io.*;
 
 public class FinanceTracker {
     List<Transaction> transactions;
+    List<Transaction> newTransactions;
     final String DATA_FILE = "transactions.csv";
 
     public FinanceTracker() {
         transactions = new ArrayList<>();
+        newTransactions = new ArrayList<>();
+        loadTransactions();
     }
 
     public void saveTransactions(){
-        try(FileWriter writer = new FileWriter(DATA_FILE)){
+        try(FileWriter writer = new FileWriter(DATA_FILE,true)){
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            for(Transaction transaction : transactions){
+            for(Transaction transaction : newTransactions){
                 String formattedTransaction = String.format(
                         "%s,%.2f,%s,%s,%s\n",
                         transaction.date().format(dateTimeFormatter),
@@ -27,6 +31,7 @@ public class FinanceTracker {
                 );
                 writer.write(formattedTransaction);
             }
+            newTransactions.clear();
         }
         catch (IOException e){
             System.out.println("Error saving the transaction " +  e.getMessage());
@@ -53,11 +58,13 @@ public class FinanceTracker {
 
             Transaction transaction = new Transaction(date,amount,category,description,type);
             transactions.add(transaction);
+            newTransactions.add(transaction);
             saveTransactions();
             System.out.println("Transaction saved successfully");
         }
         catch (Exception e){
             System.out.println("Error while adding the transaction");
+            e.printStackTrace();
         }
     }
 
@@ -74,6 +81,65 @@ public class FinanceTracker {
                     transaction.description(),
                     transaction.type().name()
             );
+        }
+    }
+
+    public void generateSummary(LocalDate startDate, LocalDate endDate,TransactionCategory category){
+        double totalIncome = transactions.stream()
+                .filter(transaction -> transaction.type() == TransactionType.INCOME)
+                .filter(transaction -> startDate == null || !transaction.date().isBefore(startDate))
+                .filter(transaction -> endDate == null || !transaction.date().isAfter(endDate))
+                .filter(transaction -> category == null || transaction.category() == category) // Filter by category
+                .mapToDouble(Transaction::amount)
+                .sum();
+
+        double totalExpenses = transactions.stream()
+                .filter(transaction -> transaction.type() == TransactionType.EXPENSE)
+                .filter(transaction -> startDate == null || !transaction.date().isBefore(startDate))
+                .filter(transaction -> endDate == null || !transaction.date().isAfter(endDate))
+                .filter(transaction -> category == null || transaction.category() == category) // Filter by category
+                .mapToDouble(Transaction::amount)
+                .sum();
+
+        double netBalance = totalIncome - totalExpenses;
+
+        System.out.println("\n--- Summary ---");
+        if (startDate != null && endDate != null) {
+            System.out.println("Date Range: " + startDate + " to " + endDate);
+        }
+        if(category != null){
+            System.out.println("Category: " + category.name());
+        }
+        System.out.println("Total Income: " + totalIncome);
+        System.out.println("Total Expenses: " + totalExpenses);
+        System.out.println("Net Balance: " + netBalance);
+    }
+
+    public void loadTransactions(){
+        transactions.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE))) {
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 5) { // Check for correct number of columns
+                    try {
+                        LocalDate date = LocalDate.parse(parts[0], dateFormatter);
+                        double amount = Double.parseDouble(parts[1]);
+                        TransactionCategory category = TransactionCategory.valueOf(parts[2].toUpperCase());
+                        String description = parts[3];
+                        TransactionType type = TransactionType.valueOf(parts[4].toUpperCase());
+                        Transaction transaction = new Transaction(date, amount, category, description, type);
+                        transactions.add(transaction);
+                    } catch (DateTimeParseException | IllegalArgumentException e) {
+                        System.out.println("Error parsing transaction: " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("Invalid CSV format: " + line);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error loading transactions: " + e.getMessage());
         }
     }
 }
