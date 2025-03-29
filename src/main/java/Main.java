@@ -13,7 +13,9 @@ public class Main {
             System.out.println("1. Add Transaction");
             System.out.println("2. View Transactions");
             System.out.println("3. Summary");
-            System.out.println("4. Exit");
+            System.out.println("4. Balance");
+            System.out.println("5. Category Reports");
+            System.out.println("6. Exit");
             System.out.print("Enter your choice: ");
 
             short choice = sc.nextShort();
@@ -58,6 +60,12 @@ public class Main {
                     tracker.generateSummary(startDate,endDate,category);
                     break;
                 case 4:
+                    tracker.claculateBalance();
+                    break;
+                case 5:
+                    tracker.generateCategoryReports();
+                    break;
+                case 6:
                     System.out.println("Exiting...");
                 sc.close();
                     return;
