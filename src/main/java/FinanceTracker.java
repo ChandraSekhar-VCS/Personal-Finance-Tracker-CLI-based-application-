@@ -20,9 +20,9 @@ public class FinanceTracker {
     }
 
     public void saveTransactions(){
-        try(FileWriter writer = new FileWriter(DATA_FILE,true)){
+        try (FileWriter writer = new FileWriter(DATA_FILE, true)) {
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            for(Transaction transaction : newTransactions){
+            for (Transaction transaction : newTransactions) {
                 String formattedTransaction = String.format(
                         "%s,%.2f,%s,%s,%s\n",
                         transaction.date().format(dateTimeFormatter),
@@ -34,39 +34,78 @@ public class FinanceTracker {
                 writer.write(formattedTransaction);
             }
             newTransactions.clear();
-        }
-        catch (IOException e){
-            System.out.println("Error saving the transaction " +  e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error saving transactions: " + e.getMessage());
         }
     }
 
     public void addTransaction(){
-        try{
-            Scanner  scanner = new Scanner(System.in);
-            System.out.println("Enter the transaction Date(yyyy-MM-dd): ");
-            String dateString = scanner.nextLine();
-            LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            System.out.println("Enter the transaction Amount: ");
-            double  amount = scanner.nextDouble();
-            scanner.nextLine();
-            System.out.println("Enter the transaction Category (GROCERIES,RENT,SALARY,ENTERTAINMENT,UTILITIES,TRANSPORTATION,OTHER): ");
-            String categoryString = scanner.nextLine().toUpperCase();
-            TransactionCategory category = TransactionCategory.valueOf(categoryString);
-            System.out.println("Enter the transaction Description: ");
-            String description = scanner.nextLine();
-            System.out.println("Enter the transaction Type (INCOME/EXPENSE): ");
-            String typeString = scanner.nextLine().toUpperCase();
-            TransactionType type = TransactionType.valueOf(typeString);
+        Scanner scanner = new Scanner(System.in);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-            Transaction transaction = new Transaction(date,amount,category,description,type);
-            transactions.add(transaction);
-            newTransactions.add(transaction);
-            saveTransactions();
-            System.out.println("Transaction saved successfully");
+        LocalDate date = null;
+        double amount = 0;
+        TransactionCategory category = null;
+        String description = null;
+        TransactionType type = null;
+
+        // Input and validate date
+        while (date == null) {
+            System.out.print("Enter the transaction Date (yyyy-MM-dd): ");
+            String dateString = scanner.nextLine();
+            try {
+                date = LocalDate.parse(dateString, dateFormatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+            }
         }
-        catch (Exception e){
-            System.out.println("Error while adding the transaction");
+
+        // Input and validate amount
+        while (true) {
+            System.out.print("Enter the transaction Amount: ");
+            try {
+                amount = Double.parseDouble(scanner.nextLine());
+                if (amount < 0) {
+                    System.out.println("Amount must be positive.");
+                } else {
+                    break; // Valid amount, exit loop
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid amount format. Please enter a number.");
+            }
         }
+
+        // Input and validate category
+        while (category == null) {
+            System.out.print("Enter the transaction Category (GROCERIES, RENT, SALARY, ENTERTAINMENT, UTILITIES, TRANSPORTATION, OTHER): ");
+            String categoryString = scanner.nextLine().toUpperCase();
+            try {
+                category = TransactionCategory.valueOf(categoryString);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid category.");
+            }
+        }
+
+        // Input and validate description
+        System.out.print("Enter the transaction Description: ");
+        description = scanner.nextLine();
+
+        // Input and validate type
+        while (type == null) {
+            System.out.print("Enter the transaction Type (INCOME/EXPENSE): ");
+            String typeString = scanner.nextLine().toUpperCase();
+            try {
+                type = TransactionType.valueOf(typeString);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid transaction type.");
+            }
+        }
+
+        Transaction transaction = new Transaction(date, amount, category, description, type);
+        transactions.add(transaction);
+        newTransactions.add(transaction);
+        saveTransactions();
+        System.out.println("Transaction saved successfully");
     }
 
     public void viewTransactions(LocalDate startDate, LocalDate endDate){
@@ -128,11 +167,11 @@ public class FinanceTracker {
             int lineNumber = 0;
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
-                if(line.trim().isEmpty()){
+                if (line.trim().isEmpty()) {
                     continue;
                 }
                 String[] parts = line.split(",");
-                if (parts.length == 5) { // Check for correct number of columns
+                if (parts.length == 5) {
                     try {
                         LocalDate date = LocalDate.parse(parts[0], dateFormatter);
                         double amount = Double.parseDouble(parts[1]);
@@ -142,48 +181,60 @@ public class FinanceTracker {
                         Transaction transaction = new Transaction(date, amount, category, description, type);
                         transactions.add(transaction);
                     } catch (DateTimeParseException e) {
-                        System.out.println("Error parsing date: " + e.getMessage());
-                    }
-                    catch (NumberFormatException e) {
-                        System.out.println("Error parsing amount: " + e.getMessage());
-                    }
-                    catch (IllegalArgumentException e){
-                        System.out.println("Error parsing  category/type: " + e.getMessage());
+                        System.out.println("Error parsing date on line " + lineNumber + ": " + e.getMessage());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error parsing amount on line " + lineNumber + ": " + e.getMessage());
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error parsing category/type on line " + lineNumber + ": " + e.getMessage());
                     }
                 } else {
-                    System.out.println("Invalid CSV format: " + line);
+                    System.out.println("Invalid CSV format on line " + lineNumber + ": " + line);
                 }
             }
+        } catch (FileNotFoundException e) {
+            System.out.println("Error: Transactions file not found.");
         } catch (IOException e) {
             System.out.println("Error loading transactions: " + e.getMessage());
         }
     }
 
     public void calculateBalance() {
-        double totalIncome = transactions.stream()
-                .filter(transaction -> transaction.type() == TransactionType.INCOME)
-                .mapToDouble(Transaction::amount)
-                .sum();
+        try {
+            double totalIncome = transactions.stream()
+                    .filter(transaction -> transaction.type() == TransactionType.INCOME)
+                    .mapToDouble(Transaction::amount)
+                    .sum();
 
-        double totalExpenses = transactions.stream()
-                .filter(transaction -> transaction.type() == TransactionType.EXPENSE)
-                .mapToDouble(Transaction::amount)
-                .sum();
+            double totalExpenses = transactions.stream()
+                    .filter(transaction -> transaction.type() == TransactionType.EXPENSE)
+                    .mapToDouble(Transaction::amount)
+                    .sum();
 
-        double balance = totalIncome - totalExpenses;
+            double balance = totalIncome - totalExpenses;
 
-        System.out.println("\n--- Current Balance ---");
-        System.out.println("Balance: " + balance);
+            System.out.println("\n--- Current Balance ---");
+            System.out.println("Balance: " + balance);
+        } catch (NullPointerException e) {
+            System.out.println("Error: Transaction list is empty or null.");
+        } catch (Exception e) {
+            System.out.println("Error calculating balance: " + e.getMessage());
+        }
     }
 
     public void generateCategoryReports(){
-        Map<TransactionCategory, Double> categoryExpenses = transactions.stream()
-                .filter(transaction -> transaction.type() == TransactionType.EXPENSE)
-                .collect(Collectors.groupingBy(Transaction::category, Collectors.summingDouble(Transaction::amount)));
+        try {
+            Map<TransactionCategory, Double> categoryExpenses = transactions.stream()
+                    .filter(transaction -> transaction.type() == TransactionType.EXPENSE)
+                    .collect(Collectors.groupingBy(Transaction::category, Collectors.summingDouble(Transaction::amount)));
 
-        System.out.println("\n--- Category-wise Expenses ---");
-        categoryExpenses.forEach((category, total) -> {
-            System.out.println(category + ": " + total);
-        });
+            System.out.println("\n--- Category-wise Expenses ---");
+            categoryExpenses.forEach((category, total) -> {
+                System.out.println(category + ": " + total);
+            });
+        } catch (NullPointerException e) {
+            System.out.println("Error: Transaction list is empty or null.");
+        } catch (Exception e) {
+            System.out.println("Error generating category reports: " + e.getMessage());
+        }
     }
 }

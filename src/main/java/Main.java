@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 public class Main {
@@ -26,20 +27,41 @@ public class Main {
                     tracker.addTransaction();
                     break;
                 case 2:
-                    System.out.println("1.View all Transactions");
-                    System.out.println("2.View transactions in a custom date range");
-                    System.out.print("Enter you choice: ");
+                    System.out.println("1. View all transactions");
+                    System.out.println("2. View transactions by date range");
+                    System.out.print("Enter your choice: ");
                     String viewChoice = sc.nextLine();
-                    LocalDate viewTransactionsStartDate = null;
-                    LocalDate viewTransactionsEndDate = null;
-                    if(viewChoice.equals("2")){
-                        System.out.print("Enter start date(yyyy-MM-dd): ");
-                        viewTransactionsStartDate = LocalDate.parse(sc.next(), dateTimeFormatter);
-                        System.out.print("Enter end date(yyyy-MM-dd): ");
-                        viewTransactionsEndDate = LocalDate.parse(sc.next(), dateTimeFormatter);
+
+                    LocalDate viewStartDate = null;
+                    LocalDate viewEndDate = null;
+
+                    if (viewChoice.equals("2")) {
+                        boolean validStartDate = false;
+                        while (!validStartDate) {
+                            System.out.print("Enter start date (yyyy-MM-dd): ");
+                            try {
+                                viewStartDate = LocalDate.parse(sc.nextLine(), dateTimeFormatter);
+                                validStartDate = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                            }
+                        }
+
+                        boolean validEndDate = false;
+                        while (!validEndDate) {
+                            System.out.print("Enter end date (yyyy-MM-dd): ");
+                            try {
+                                viewEndDate = LocalDate.parse(sc.nextLine(), dateTimeFormatter);
+                                validEndDate = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                            }
+                        }
                     }
-                    tracker.viewTransactions(viewTransactionsStartDate,viewTransactionsEndDate);
+
+                    tracker.viewTransactions(viewStartDate, viewEndDate);
                     break;
+
                 case 3:
                     System.out.println("1. Generate an all time summary");
                     System.out.println("2. Generate a summary for custom date range");
@@ -48,28 +70,42 @@ public class Main {
                     LocalDate startDate = null;
                     LocalDate endDate = null;
                     TransactionCategory category = null;
-                    if(summaryChoice.equals("2")){
-                        System.out.print("Enter start date (yyyy-mm-dd): ");
-                        String sDate  = sc.nextLine();
-                        startDate = LocalDate.parse(sDate,dateTimeFormatter);
-                        System.out.print("Enter end date (yyyy-mm-dd): ");
-                        String eDate = sc.nextLine();
-                        endDate = LocalDate.parse(eDate,dateTimeFormatter);
+                    if (summaryChoice.equals("2")) {
+                        boolean validStartDate = false;
+                        while (!validStartDate) {
+                            System.out.print("Enter start date (yyyy-MM-dd): ");
+                            try {
+                                startDate = LocalDate.parse(sc.nextLine(), dateTimeFormatter);
+                                validStartDate = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                            }
+                        }
+
+                        boolean validEndDate = false;
+                        while (!validEndDate) {
+                            System.out.print("Enter end date (yyyy-MM-dd): ");
+                            try {
+                                endDate = LocalDate.parse(sc.nextLine(), dateTimeFormatter);
+                                validEndDate = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                            }
+                        }
                     }
                     System.out.print("Filter by category? (y/n): ");
                     String categoryFilter = sc.nextLine().toLowerCase();
-                    if(categoryFilter.equals("y")){
+                    if (categoryFilter.equals("y")) {
                         System.out.println("Enter category (GROCERIES,RENT,SALARY,ENTERTAINMENT,UTILITIES,TRANSPORTATION,OTHER): ");
-                        String categoryChoice =  sc.nextLine().toUpperCase();
-                        try{
+                        String categoryChoice = sc.nextLine().toUpperCase();
+                        try {
                             category = TransactionCategory.valueOf(categoryChoice);
-                        }
-                        catch(IllegalArgumentException e){
-                            System.out.println("You have entered a invalid category");
+                        } catch (IllegalArgumentException e) {
+                            System.out.println("You have entered an invalid category");
                             continue;
                         }
                     }
-                    tracker.generateSummary(startDate,endDate,category);
+                    tracker.generateSummary(startDate, endDate, category);
                     break;
                 case 4:
                     tracker.calculateBalance();
