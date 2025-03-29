@@ -62,19 +62,6 @@ Allow the user to create, and delete categories.
 Deliverables:
 A more robust and user-friendly CLI application with improved error handling.
 
-**Phase 4: Refactoring and Modernization**
-
-Goal: Refactor the code for better readability and maintainability, and incorporate modern Java features.
-
-Tasks:
-Refactor the code to improve its structure and readability.
-Incorporate modern Java features (e.g., Optional, var, records, streams).
-Use Generics where appropriate.
-
-Deliverables:
-A clean, well-structured, and modern Java application.
-Well documented code.
-
 **Technologies Used:**
 Java
 Maven (for build management)
